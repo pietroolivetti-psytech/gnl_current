@@ -1,0 +1,305 @@
+#include "get_next_line.h"
+
+char	*clean_pointers(char *p1, char *p2)
+{
+	if (!p1)
+	{
+		free(p1);
+		p1 = NULL;
+	}
+	if (!p2)
+	{
+		free(p2);
+		p2 = NULL;
+	}
+	return(NULL);
+}
+char	*buildup_static(char *static_buffer, char *temp_buffer)
+{
+	char	*build_backup;
+
+	if (!static_buffer)
+	{
+		static_buffer = ft_strdup(temp_buffer);
+		return (static_buffer);
+	}
+	build_backup = static_buffer;
+	static_buffer = ft_strjoin(build_backup, temp_buffer);
+	if (!static_buffer)
+		return(clean_pointers(build_backup, NULL));
+	free(build_backup);
+	build_backup = NULL;
+	return (static_buffer);
+}
+
+char	*feed_static_buffer(int fd, char *static_buffer)
+{
+	char	*temp_buffer;
+	ssize_t	bytes;
+
+	temp_buffer = malloc(BUFFER_SIZE + 1);
+	if (!temp_buffer)
+		return (clean_pointers(static_buffer, temp_buffer));
+	bytes = 1;
+	while (bytes)
+	{
+		bytes = read(fd, temp_buffer, BUFFER_SIZE);
+		if (bytes < 0)
+			return (clean_pointers(static_buffer, temp_buffer));
+		if(!bytes)
+			break;
+		temp_buffer[bytes] = '\0';
+		static_buffer = buildup_static(static_buffer, temp_buffer);
+		if (!static_buffer)
+			break ;
+		if (ft_chrpos(static_buffer, '\n') > -1)
+			break;
+	}
+	free(temp_buffer);
+	temp_buffer = NULL;
+	return (static_buffer);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*static_buffer;
+	ssize_t		nl_pos;
+	char		*next_line;
+	char		*current_line;
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (NULL);
+	static_buffer = feed_static_buffer(fd, static_buffer);
+	if (!static_buffer || !static_buffer[0])
+		return (clean_pointers(static_buffer, NULL));
+	nl_pos = ft_chrpos(static_buffer, '\n');
+	if (nl_pos > -1 && nl_pos < ((ssize_t)ft_strlen(static_buffer) - 1))
+	{
+		next_line = ft_strdup(&static_buffer[nl_pos + 1]);
+		current_line = ft_substr(static_buffer, 0, nl_pos + 1);
+		if (!next_line || !current_line)
+			return(free(static_buffer), static_buffer = NULL, clean_pointers(next_line, current_line));
+		free (static_buffer);
+		static_buffer = next_line;
+		return (current_line);
+	}
+	current_line = ft_strdup(static_buffer);
+	return (free(static_buffer), static_buffer = NULL, current_line);
+}
+#include "get_next_line.h"
+
+size_t	ft_strlen(char *s)
+{
+	size_t	len;
+
+	len = 0;
+	while(s[len])
+		len++;
+	return (len);
+}
+
+char	*ft_strdup(char *s)
+{
+	char	*new;
+	size_t	len;
+	ssize_t	i;
+
+	if (!s)
+		return (NULL);
+	len = ft_strlen(s);
+	new = malloc((len + 1) * sizeof(char));
+	if (!new)
+		return (NULL);
+	i = -1;
+	while(s[++i])
+		new[i] = s[i];
+	return (new);
+}
+
+char	*ft_strjoin(char *s1, char *s2)
+{
+	char	*s3;
+	ssize_t	i;
+	ssize_t	j;
+	size_t	len;
+
+	len = ft_strlen(s1) + ft_strlen(s2) + 1;
+	s3 = malloc(len * sizeof(char));
+	if (!s3)
+		return (NULL);
+	i = -1;
+	while (s1[++i])
+		s3[i] = s1[i];
+	j = -1;
+	while (s2[++j])
+		s3[i + j] = s2[j];
+	s3[i + j] = '\0';
+	return(s3);
+}
+
+char	*ft_substr(char *s, unsigned int start, size_t len_sub)
+{
+	char	*new;
+	size_t	s_len;
+	size_t	i;
+
+	if (!s)
+		return (NULL);
+	s_len = ft_strlen(s);
+	if (start > s_len)
+		return (ft_strdup(""));
+	if ((s_len - start) < len_sub)
+		len_sub = s_len - start;
+	new = malloc((s_len + 1) * sizeof(char));
+	if (!new)
+		return (NULL);
+	i = 0;
+	while(i < len_sub)
+	{
+		if (!s[start])
+			return (new);
+		new[i++] = s[start++]; 
+	}
+	new[i] = '\0';
+	return (new);
+}
+ssize_t		ft_chrpos(char *s, char c)
+{
+	ssize_t	i;
+
+	i = 0;
+	while (s[i])
+	{
+		if (s[i] == c)
+			return (i);
+		i++;
+	}
+	return (-1);
+}#include "get_next_line.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int main()
+{
+	int	fd;
+	char	*line = "";
+	fd = open("t_10_nl", O_RDONLY);
+
+	while(line)
+	{
+		line = get_next_line(fd);
+		printf("%s", line);
+		free (line);
+	}
+	close (fd);
+}
+
+
+
+/*size_t	ft_strlen(char *s)
+{
+	size_t	len;
+
+	len = 0;
+	while(s[len])
+		len++;
+	return (len);
+}
+
+char	*ft_strdup(char *s)
+{
+	char	*new;
+	size_t	len;
+	ssize_t	i;
+
+	if (!s)
+		return (NULL);
+	len = ft_strlen(s);
+	new = malloc((len + 1) * sizeof(char));
+	if (!new)
+		return (NULL);
+	i = -1;
+	while(s[++i])
+		new[i] = s[i];
+	new[i] = '\0';
+	return (new);
+}
+char	*ft_strjoin(char *s1, char *s2)
+{
+	char	*s3;
+	ssize_t	i;
+	ssize_t	j;
+	size_t	len;
+
+	len = ft_strlen(s1) + ft_strlen(s2) + 1;
+	s3 = malloc(len * sizeof(char));
+	if (!s3)
+		return (NULL);
+	i = -1;
+	while (s1[++i])
+		s3[i] = s1[i];
+	j = -1;
+	while (s2[++j])
+		s3[i + j] = s2[j];
+	s3[i + j] = '\0';
+	return(s3);
+}
+
+char	*ft_substr(char *s, unsigned int start, size_t len_sub)
+{
+	char	*new;
+	size_t	s_len;
+	size_t	i;
+
+	if (!s)
+		return (NULL);
+	s_len = ft_strlen(s);
+	if (start > s_len)
+		return (ft_strdup(""));
+	if ((s_len - start) < len_sub)
+		len_sub = s_len - start;
+	new = malloc((s_len + 1) * sizeof(char));
+	if (!new)
+		return (NULL);
+	i = 0;
+	while(i < len_sub)
+	{
+		if (!s[start])
+			return (new);
+		new[i++] = s[start++]; 
+	}
+	new[i] = '\0';
+	return (new);
+}
+
+int main()
+{
+	char *ex = "copy this\0";
+	char *x = ft_strdup(ex);
+	char *j = " shit!";
+	printf("copied: %s\n", x);
+	printf("joining: %s\n", ft_strjoin(ex, j));
+	printf("substring from t: %s\n", ft_substr(ex, 5, 15));
+
+}	*/#ifndef GET_NEXT_LINE_H
+#define GET_NEXT_LINE_H
+
+#include <stdlib.h>
+#include <unistd.h>
+
+#ifndef BUFFER_SIZE
+#define BUFFER_SIZE 42
+#endif
+
+char	*get_next_line(int fd);
+char	*feed_static_buffer(int fd, char *static_buffer);
+char	*clean_pointers(char *p1, char *p2);
+char	*buildup_static(char *static_buffer, char *temp_buffer);
+size_t	ft_strlen(char *s);
+char	*ft_strdup(char *s);
+char	*ft_strjoin(char *s1, char *s2);
+char	*ft_substr(char *s, unsigned int start, size_t len_sub);
+ssize_t		ft_chrpos(char *s, char c);
+#endif
