@@ -20,6 +20,8 @@
 #define BUFFER_SIZE 10
 #endif
 
+#define MAX_FDS _SC_OPEN_MAX
+
 char	*get_next_line(int fd);
 char	*feed_static_buffer(int fd, char *static_buffer);
 char	*clean_pointers(char *p1, char *p2);

@@ -83,8 +83,9 @@ char	*get_next_line(int fd)
 		//return(clean_pointers(static_buffer, NULL));
 		return (NULL);
 	static_buffer = feed_static_buffer(fd, static_buffer);
-	if (!static_buffer)
-		return(free(static_buffer), static_buffer = NULL, NULL); //(clean_pointers(static_buffer, NULL));
+	if (!static_buffer || !static_buffer[0])
+		//return (free(static_buffer), static_buffer = NULL, NULL); 
+		return (clean_pointers(static_buffer, NULL));
 	nl_pos = ft_chrpos(static_buffer, '\n');
 	if (nl_pos > -1 && (nl_pos < (ssize_t)ft_strlen(static_buffer) - 1))
 	{
