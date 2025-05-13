@@ -1,0 +1,479 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pileonar <pileonar@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/12 21:30:54 by pileonar          #+#    #+#             */
+/*   Updated: 2025/05/13 20:51:57 by pileonar         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line_bonus.h"
+
+char	*clean_pointers(char *p1, char *p2)
+{
+	if (p1)
+	{
+		free(p1);
+		p1 = NULL;
+	}
+	if (p2)
+	{
+		free(p2);
+		p2 = NULL;
+	}
+	return (NULL);
+}
+
+char	*buildup_static(char *static_buffer, char *temp_buffer)
+{
+	char	*build_backup;
+
+	if (!static_buffer)
+	{
+		static_buffer = ft_strdup(temp_buffer);
+		return (static_buffer);
+	}
+	build_backup = ft_strjoin(static_buffer, temp_buffer);
+	//if (!build_backup)
+	//	return (clean_pointers(build_backup, NULL));
+	free(static_buffer);
+	static_buffer = build_backup;
+	return (static_buffer);
+}
+
+char	*feed_static_buffer(int fd, char *static_buffer)
+{
+	char	*temp_buffer;
+	ssize_t	bytes;
+
+	bytes = 1;
+	temp_buffer = malloc((BUFFER_SIZE + 1) * sizeof(char));
+	if (!temp_buffer)
+		return (clean_pointers(temp_buffer, static_buffer));
+	while (bytes)
+	{
+		bytes = read(fd, temp_buffer, BUFFER_SIZE);
+		if (bytes < 0)
+			return (clean_pointers(static_buffer, temp_buffer));
+		if (!bytes)
+			break ;
+		temp_buffer[bytes] = '\0';
+		static_buffer = buildup_static(static_buffer, temp_buffer);
+		if (!static_buffer)
+			break ;
+		if (ft_chrpos(static_buffer, '\n') > -1)
+			break ;
+	}
+	free(temp_buffer);
+	temp_buffer = NULL;
+	return (static_buffer);
+}
+
+char	*get_next_line(int fd)
+{
+	ssize_t		nl_pos;
+	char		*next_line;
+	char		*current_line;
+	static char	*static_buffer[1024];
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (clean_pointers(static_buffer[fd], NULL));
+	static_buffer[fd] = feed_static_buffer(fd, static_buffer[fd]);
+	if (!static_buffer[fd] || !static_buffer[fd][0])
+		return (clean_pointers(static_buffer[fd], NULL));
+	nl_pos = ft_chrpos(static_buffer[fd], '\n');
+	if (nl_pos > -1 && (nl_pos < (ssize_t)ft_strlen(static_buffer[fd]) - 1))
+	{
+		next_line = ft_strdup(&static_buffer[fd][nl_pos + 1]);
+		current_line = ft_substr(static_buffer[fd], 0, nl_pos + 1);
+		if (!current_line || !next_line)
+			return (free(static_buffer[fd]), static_buffer[fd] = NULL,
+				clean_pointers(next_line, current_line));
+		free(static_buffer[fd]);
+		static_buffer[fd] = next_line;
+		return (current_line);
+	}
+	current_line = ft_strdup(static_buffer[fd]);
+	return (free(static_buffer[fd]), static_buffer[fd] = NULL, current_line);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pileonar <pileonar@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/12 21:30:46 by pileonar          #+#    #+#             */
+/*   Updated: 2025/05/13 15:58:03 by pileonar         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line.h"
+
+char	*clean_pointers(char *p1, char *p2)
+{
+	if (p1)
+	{
+		free(p1);
+		p1 = NULL;
+	}
+	if (p2)
+	{
+		free(p2);
+		p2 = NULL;
+	}
+	return (NULL);
+}
+
+char	*buildup_static(char *static_buffer, char *temp_buffer)
+{
+	char	*build_backup;
+
+	if (!static_buffer)
+	{
+		static_buffer = ft_strdup(temp_buffer);
+		return (static_buffer);
+	}
+	build_backup = static_buffer;
+	static_buffer = ft_strjoin(build_backup, temp_buffer);
+	if (!static_buffer)
+		return (clean_pointers(build_backup, NULL));
+	free(build_backup);
+	build_backup = NULL;
+	return (static_buffer);
+}
+
+char	*feed_static_buffer(int fd, char *static_buffer)
+{
+	char	*temp_buffer;
+	ssize_t	bytes;
+
+	bytes = 1;
+	temp_buffer = malloc((BUFFER_SIZE + 1) * sizeof(char));
+	if (!temp_buffer)
+		return (clean_pointers(temp_buffer, static_buffer));
+	while (bytes)
+	{
+		bytes = read(fd, temp_buffer, BUFFER_SIZE);
+		if (bytes < 0)
+			return (clean_pointers(static_buffer, temp_buffer));
+		if (!bytes)
+			break ;
+		temp_buffer[bytes] = '\0';
+		static_buffer = buildup_static(static_buffer, temp_buffer);
+		if (!static_buffer)
+			break ;
+		if (ft_chrpos(static_buffer, '\n') > -1)
+			break ;
+	}
+	free(temp_buffer);
+	temp_buffer = NULL;
+	return (static_buffer);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*static_buffer;
+	ssize_t		nl_pos;
+	char		*next_line;
+	char		*current_line;
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (clean_pointers(static_buffer, NULL));
+	static_buffer = feed_static_buffer(fd, static_buffer);
+	if (!static_buffer || !static_buffer[0])
+		return (clean_pointers(static_buffer, NULL));
+	nl_pos = ft_chrpos(static_buffer, '\n');
+	if (nl_pos > -1 && (nl_pos < (ssize_t)ft_strlen(static_buffer) - 1))
+	{
+		next_line = ft_strdup(&static_buffer[nl_pos + 1]);
+		current_line = ft_substr(static_buffer, 0, nl_pos + 1);
+		if (!current_line || !next_line)
+			return (free(static_buffer), static_buffer = NULL,
+				clean_pointers(next_line, current_line));
+		free(static_buffer);
+		static_buffer = next_line;
+		return (current_line);
+	}
+	current_line = ft_strdup(static_buffer);
+	return (free(static_buffer), static_buffer = NULL, current_line);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_utils_bonus.c                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pileonar <pileonar@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/12 21:31:07 by pileonar          #+#    #+#             */
+/*   Updated: 2025/05/13 16:09:36 by pileonar         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line_bonus.h"
+
+size_t	ft_strlen(char *s)
+{
+	size_t	len;
+
+	len = 0;
+	while (s[len])
+		len++;
+	return (len);
+}
+
+char	*ft_strdup(char *src)
+{
+	char	*new;
+	int		i;
+
+	i = 0;
+	new = (char *)malloc(sizeof(char) * ft_strlen(src) + 1);
+	if (!new)
+		return (NULL);
+	while (*src)
+		new[i++] = *src++;
+	new[i] = '\0';
+	return (new);
+}
+
+char	*ft_strjoin(char *s1, char *s2)
+{
+	char	*s3;
+	size_t	i;
+	size_t	j;
+	size_t	len;
+
+	i = 0;
+	j = 0;
+	len = (ft_strlen(s1) + ft_strlen(s2)) + 1;
+	s3 = malloc(sizeof(char) * len);
+	if (!s3)
+		return (NULL);
+	while (i < len && s1[i])
+	{
+		s3[i] = s1[i];
+		i++;
+	}
+	while (i + j < len && s2[j])
+	{
+		s3[j + i] = s2[j];
+		j++;
+	}
+	s3[i + j] = '\0';
+	return (s3);
+}
+
+char	*ft_substr(char *s, unsigned int start, size_t len)
+{
+	size_t	i;
+	size_t	len_str;
+	char	*s2;
+
+	if (s == NULL)
+		return (NULL);
+	i = 0;
+	len_str = ft_strlen(s);
+	if (start >= len_str)
+		return (ft_strdup(""));
+	if ((len_str - start) < len)
+		len = len_str - start;
+	s2 = malloc(len + 1 * sizeof(char));
+	if (!s2)
+		return (NULL);
+	while (i < len)
+	{
+		if (!s[start])
+			return (s2);
+		s2[i++] = s[start++];
+	}
+	s2[i] = '\0';
+	return (s2);
+}
+
+ssize_t	ft_chrpos(char *s, char c)
+{
+	ssize_t	i;
+
+	i = 0;
+	while (s[i])
+	{
+		if (s[i] == c)
+			return (i);
+		i++;
+	}
+	return (-1);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_utils.c                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pileonar <pileonar@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/12 21:31:29 by pileonar          #+#    #+#             */
+/*   Updated: 2025/05/13 16:04:02 by pileonar         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line.h"
+
+size_t	ft_strlen(char *s)
+{
+	size_t	len;
+
+	len = 0;
+	while (s[len])
+		len++;
+	return (len);
+}
+
+char	*ft_strdup(char *src)
+{
+	char	*new;
+	int		i;
+
+	i = 0;
+	new = (char *)malloc(sizeof(char) * ft_strlen(src) + 1);
+	if (!new)
+		return (NULL);
+	while (*src)
+		new[i++] = *src++;
+	new[i] = '\0';
+	return (new);
+}
+
+char	*ft_strjoin(char *s1, char *s2)
+{
+	char	*s3;
+	size_t	i;
+	size_t	j;
+	size_t	len;
+
+	i = 0;
+	j = 0;
+	len = (ft_strlen(s1) + ft_strlen(s2)) + 1;
+	s3 = malloc(sizeof(char) * len);
+	if (!s3)
+		return (NULL);
+	while (i < len && s1[i])
+	{
+		s3[i] = s1[i];
+		i++;
+	}
+	while (i + j < len && s2[j])
+	{
+		s3[j + i] = s2[j];
+		j++;
+	}
+	s3[i + j] = '\0';
+	return (s3);
+}
+
+char	*ft_substr(char *s, unsigned int start, size_t len)
+{
+	size_t	i;
+	size_t	len_str;
+	char	*s2;
+
+	if (s == NULL)
+		return (NULL);
+	i = 0;
+	len_str = ft_strlen(s);
+	if (start >= len_str)
+		return (ft_strdup(""));
+	if ((len_str - start) < len)
+		len = len_str - start;
+	s2 = malloc(len + 1 * sizeof(char));
+	if (!s2)
+		return (NULL);
+	while (i < len)
+	{
+		if (!s[start])
+			return (s2);
+		s2[i++] = s[start++];
+	}
+	s2[i] = '\0';
+	return (s2);
+}
+
+ssize_t	ft_chrpos(char *s, char c)
+{
+	ssize_t	i;
+
+	i = 0;
+	while (s[i])
+	{
+		if (s[i] == c)
+			return (i);
+		i++;
+	}
+	return (-1);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_bonus.h                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pileonar <pileonar@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 16:07:50 by pileonar          #+#    #+#             */
+/*   Updated: 2025/05/13 16:10:11 by pileonar         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#ifndef GET_NEXT_LINE_BONUS_H
+# define GET_NEXT_LINE_BONUS_H
+
+# include <stdlib.h>
+# include <unistd.h>
+
+# ifndef BUFFER_SIZE
+#  define BUFFER_SIZE 10
+# endif
+
+# define MAX_FDS _SC_OPEN_MAX
+
+char	*get_next_line(int fd);
+char	*feed_static_buffer(int fd, char *static_buffer);
+char	*clean_pointers(char *p1, char *p2);
+char	*buildup_static(char *static_buffer, char *temp_buffer);
+size_t	ft_strlen(char *s);
+char	*ft_strdup(char *s);
+char	*ft_strjoin(char *s1, char *s2);
+char	*ft_substr(char *s, unsigned int start, size_t len);
+ssize_t	ft_chrpos(char *s, char c);
+#endif/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line.h                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pileonar <pileonar@student.42porto.com>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/12 21:31:19 by pileonar          #+#    #+#             */
+/*   Updated: 2025/05/13 16:01:25 by pileonar         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#ifndef GET_NEXT_LINE_H
+# define GET_NEXT_LINE_H
+
+# include <stdlib.h>
+# include <unistd.h>
+# ifndef BUFFER_SIZE
+#  define BUFFER_SIZE 10
+# endif
+
+char	*get_next_line(int fd);
+char	*feed_static_buffer(int fd, char *static_buffer);
+char	*clean_pointers(char *p1, char *p2);
+char	*buildup_static(char *static_buffer, char *temp_buffer);
+size_t	ft_strlen(char *s);
+char	*ft_strdup(char *s);
+char	*ft_strjoin(char *s1, char *s2);
+char	*ft_substr(char *s, unsigned int start, size_t len);
+ssize_t	ft_chrpos(char *s, char c);
+#endif
